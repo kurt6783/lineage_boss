@@ -226,6 +226,31 @@
                         const name = document.createElement('div');
                         name.textContent = item.Name || '未提供名稱';
 
+                        // 點擊卡片觸發 API 呼叫
+                        card.addEventListener('click', async () => {
+                            if (confirm(`確定要處理 "${item.Name}" 嗎？`)) {
+                                try {
+                                    const res = await fetch('https://www.lovelykurt.com/kill', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({ id: item.ID })
+                                    });
+
+                                    if (!res.ok) {
+                                        throw new Error(`操作失敗，狀態碼：${res.status}`);
+                                    }
+
+                                    // 成功後，重新載入資料
+                                    alert(`${item.Name} 處理成功！`);
+                                    await fetchData(); // 可以根據需要刷新待宰 Boss 的資料
+                                } catch (err) {
+                                    alert('操作時發生錯誤: ' + err.message);
+                                }
+                            }
+                        });
+
                         card.appendChild(img);
                         card.appendChild(name);
                         container.appendChild(card);
