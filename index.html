@@ -18,18 +18,25 @@
             flex-direction: column;
         }
 
-        .top-section {
+        .main-content {
+            flex: 1;
+            display: flex;
+            height: 100%;
+        }
+
+        .left-section {
+            flex: 2;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #e0e0e0;
+            border-right: 1px solid #ccc;
+        }
+
+        .right-section {
             flex: 1;
             padding: 20px;
             overflow-y: auto;
             background-color: #f0f0f0;
-        }
-
-        .bottom-section {
-            flex: 1;
-            padding: 20px;
-            background-color: #e0e0e0;
-            overflow-y: auto;
         }
 
         table {
@@ -89,27 +96,29 @@
 
 <body>
     <div class="container">
-        <div class="top-section">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2>待宰 Boss</h2>
-                <button id="refreshButton" title="重新整理資料"
-                    style="font-size: 20px; cursor: pointer; background: none; border: none;">🔄</button>
+        <div class="main-content">
+            <div class="left-section">
+                <h2>全部 Boss (點選圖片即可紀錄擊殺 Boss 時間)</h2>
+                <div id="allBossContainer" class="boss-grid"></div>
             </div>
-            <table id="dataTable">
-                <thead>
-                    <tr>
-                        <th>名稱</th>
-                        <th>下次時間</th>
-                        <th>操作</th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody"></tbody>
-            </table>
-        </div>
 
-        <div class="bottom-section">
-            <h2>全部 Boss (點選圖片即可紀錄擊殺 Boss 時間)</h2>
-            <div id="allBossContainer" class="boss-grid"></div>
+            <div class="right-section">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>待宰 Boss</h2>
+                    <button id="refreshButton" title="重新整理資料"
+                        style="font-size: 20px; cursor: pointer; background: none; border: none;">🔄</button>
+                </div>
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>名稱</th>
+                            <th>下次時間</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
         </div>
     </div>
 
@@ -223,8 +232,10 @@
                         img.src = item.Image || '';
                         img.alt = item.Name || '圖片';
 
-                        const name = document.createElement('div');
-                        name.textContent = item.Name || '未提供名稱';
+                        const namePeriod = document.createElement('div');
+                        // 格式化顯示名稱和時間
+                        const period = item.Period || 0; // 假設每個 Boss 有 Period 屬性，表示小時
+                        namePeriod.textContent = `${item.Name || '未提供名稱'} - ${period} 小時`;
 
                         // 點擊卡片觸發 API 呼叫
                         card.addEventListener('click', async () => {
@@ -252,7 +263,7 @@
                         });
 
                         card.appendChild(img);
-                        card.appendChild(name);
+                        card.appendChild(namePeriod);
                         container.appendChild(card);
                     });
                 } else {
@@ -264,8 +275,6 @@
                 container.innerHTML = '<p>載入資料失敗: ' + error.message + '</p>';
             }
         }
-
-
 
         window.onload = () => {
             fetchData();
