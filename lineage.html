@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>資料展示</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .top-section {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-color: #f0f0f0;
+        }
+
+        .bottom-section {
+            flex: 1;
+            padding: 20px;
+            background-color: #e0e0e0;
+            overflow-y: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        img {
+            max-height: 80px;
+        }
+
+        .boss-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .boss-card {
+            flex: 0 1 calc(20% - 16px);
+            /* 每行五個，減去 gap */
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            padding: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .boss-card img {
+            max-width: 100%;
+            max-height: 100px;
+            margin-bottom: 8px;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 20px;
+            color: red;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="top-section">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2>待宰 Boss</h2>
+                <button id="refreshButton" title="重新整理資料"
+                    style="font-size: 20px; cursor: pointer; background: none; border: none;">🔄</button>
+            </div>
+            <table id="dataTable">
+                <thead>
+                    <tr>
+                        <th>名稱</th>
+                        <th>下次時間</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody"></tbody>
+            </table>
+        </div>
+
+        <div class="bottom-section">
+            <h2>全部 Boss</h2>
+            <div id="allBossContainer" class="boss-grid"></div>
+        </div>
+    </div>
+
+    <script>
+        const tableBody = document.getElementById('tableBody');
+        const allBossBody = document.getElementById('allBossBody');
+
+        async function fetchData() {
+            try {
+                const response = await fetch('http://3.236.173.91:8080/killList', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                tableBody.innerHTML = '';
+
+                if (data.data && Array.isArray(data.data)) {
+                    data.data.forEach(item => {
+                        const row = document.createElement('tr');
+
+                        // 名稱
+                        const nameCell = document.createElement('td');
+                        nameCell.textContent = item.Name || '未提供名稱';
+                        row.appendChild(nameCell);
+
+                        // 下次時間
+                        const timeCell = document.createElement('td');
+                        const date = new Date(item.NextTime);
+                        timeCell.textContent = item.NextTime ?
+                            date.toLocaleString('zh-TW') :
+                            '未提供時間';
+                        row.appendChild(timeCell);
+
+                        // 刪除按鈕欄位
+                        const actionCell = document.createElement('td');
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.innerHTML = '❌';
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.title = '刪除此 Boss';
+
+                        deleteBtn.addEventListener('click', async () => {
+                            if (confirm(`確定要刪除 "${item.Name}" 嗎？`)) {
+                                try {
+                                    const res = await fetch('http://3.236.173.91:8080/delete', {
+                                        method: 'POST',
+                                        headers: {
+                                            'Content-Type': 'application/json',
+                                        },
+                                        body: JSON.stringify({ id: item.ID })
+                                    });
+
+                                    if (!res.ok) {
+                                        throw new Error(`刪除失敗，狀態碼：${res.status}`);
+                                    }
+
+                                    // 刪除成功，重新載入資料
+                                    await fetchData();
+                                } catch (err) {
+                                    alert('刪除時發生錯誤: ' + err.message);
+                                }
+                            }
+                        });
+
+                        actionCell.appendChild(deleteBtn);
+                        row.appendChild(actionCell);
+
+                        tableBody.appendChild(row);
+                    });
+
+                } else {
+                    tableBody.innerHTML = '<tr><td colspan="2">無可用數據</td></tr>';
+                }
+            } catch (error) {
+                console.error('獲取數據時出錯:', error);
+                tableBody.innerHTML = '<tr><td colspan="2">載入數據失敗: ' + error.message + '</td></tr>';
+            }
+        }
+
+        async function fetchAllBoss() {
+            try {
+                const response = await fetch('http://3.236.173.91:8080/boss', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const container = document.getElementById('allBossContainer');
+                container.innerHTML = '';
+
+                if (data.data && Array.isArray(data.data)) {
+                    data.data.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'boss-card';
+
+                        const img = document.createElement('img');
+                        img.src = item.Image || '';
+                        img.alt = item.Name || '圖片';
+
+                        const name = document.createElement('div');
+                        name.textContent = item.Name || '未提供名稱';
+
+                        card.appendChild(img);
+                        card.appendChild(name);
+                        container.appendChild(card);
+                    });
+                } else {
+                    container.innerHTML = '<p>無可用資料</p>';
+                }
+            } catch (error) {
+                console.error('取得全部 Boss 資料失敗:', error);
+                const container = document.getElementById('allBossContainer');
+                container.innerHTML = '<p>載入資料失敗: ' + error.message + '</p>';
+            }
+        }
+
+
+
+        window.onload = () => {
+            fetchData();
+            fetchAllBoss();
+
+            document.getElementById('refreshButton').addEventListener('click', () => {
+                fetchData();
+            });
+        };
+    </script>
+</body>
+
+</html>
