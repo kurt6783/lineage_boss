@@ -18,10 +18,35 @@
             flex-direction: column;
         }
 
+        .status-bar {
+            padding: 5px;
+            background-color: #f8f8f8;
+            border-bottom: 1px solid #ccc;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        #connection-status {
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .connected {
+            color: green;
+        }
+
+        .disconnected {
+            color: red;
+        }
+
+        .connecting {
+            color: orange;
+        }
+
         .main-content {
             flex: 1;
             display: flex;
-            height: 100%;
+            overflow: hidden;
         }
 
         .left-section {
@@ -69,7 +94,6 @@
 
         .boss-card {
             flex: 0 1 calc(20% - 16px);
-            /* 每行五個，減去 gap */
             background: #fff;
             border: 1px solid #ccc;
             border-radius: 8px;
@@ -96,12 +120,14 @@
 
 <body>
     <div class="container">
+        <div class="status-bar">
+            連線狀態: <span id="connection-status" class="connecting">連線中...</span>
+        </div>
         <div class="main-content">
             <div class="left-section">
                 <h2>全部 Boss (點選圖片即可紀錄擊殺 Boss 時間)</h2>
                 <div id="allBossContainer" class="boss-grid"></div>
             </div>
-
             <div class="right-section">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <h2>待宰 Boss</h2>
@@ -123,85 +149,95 @@
     </div>
 
     <script>
+        function updateConnectionStatus(status, className) {
+            const statusElement = document.getElementById("connection-status");
+            statusElement.textContent = status;
+            statusElement.className = className;
+        }
+
+        // 初始化 SSE 連線的函數
+        let source;
+        function connectSSE() {
+            source = new EventSource('https://www.lovelykurt.com/notify');
+
+            source.onopen = function () {
+                console.log("SSE 連線已建立");
+                updateConnectionStatus("已連線", "connected");
+            };
+
+            source.onmessage = function (event) {
+                console.log("收到推送:", event.data);
+                const data = JSON.parse(event.data);
+                if (Notification.permission === "granted") {
+                    new Notification(data.title, {
+                        body: data.body,
+                        icon: "https://via.placeholder.com/50"
+                    });
+                }
+            };
+
+            source.onerror = function () {
+                console.error("SSE 連線失敗或中斷");
+                updateConnectionStatus("已斷線", "disconnected");
+            };
+        }
+
+        // 初次連線
+        connectSSE();
+
         const tableBody = document.getElementById('tableBody');
-        const allBossBody = document.getElementById('allBossBody');
 
         async function fetchData() {
             try {
                 const response = await fetch('https://www.lovelykurt.com/killList', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({})
                 });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const data = await response.json();
                 tableBody.innerHTML = '';
-
                 if (data.data && Array.isArray(data.data)) {
                     data.data.forEach(item => {
                         const row = document.createElement('tr');
-
-                        // 名稱
                         const nameCell = document.createElement('td');
                         nameCell.textContent = item.Name || '未提供名稱';
                         row.appendChild(nameCell);
-
-                        // 下次時間
                         const timeCell = document.createElement('td');
                         const date = new Date(item.NextTime);
-                        timeCell.textContent = item.NextTime ?
-                            date.toLocaleString('zh-TW') :
-                            '未提供時間';
+                        timeCell.textContent = item.NextTime ? date.toLocaleString('zh-TW') : '未提供時間';
                         row.appendChild(timeCell);
-
-                        // 刪除按鈕欄位
                         const actionCell = document.createElement('td');
                         const deleteBtn = document.createElement('button');
                         deleteBtn.innerHTML = '❌';
                         deleteBtn.className = 'delete-btn';
                         deleteBtn.title = '刪除此 Boss';
-
                         deleteBtn.addEventListener('click', async () => {
                             if (confirm(`確定要刪除 "${item.Name}" 嗎？`)) {
                                 try {
                                     const res = await fetch('https://www.lovelykurt.com/delete', {
                                         method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                        },
+                                        headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ id: item.ID })
                                     });
-
-                                    if (!res.ok) {
-                                        throw new Error(`刪除失敗，狀態碼：${res.status}`);
-                                    }
-
-                                    // 刪除成功，重新載入資料
+                                    if (!res.ok) throw new Error(`刪除失敗，狀態碼：${res.status}`);
                                     await fetchData();
                                 } catch (err) {
                                     alert('刪除時發生錯誤: ' + err.message);
                                 }
                             }
                         });
-
                         actionCell.appendChild(deleteBtn);
                         row.appendChild(actionCell);
-
                         tableBody.appendChild(row);
                     });
-
                 } else {
-                    tableBody.innerHTML = '<tr><td colspan="2">無可用數據</td></tr>';
+                    tableBody.innerHTML = '<tr><td colspan="3">無可用數據</td></tr>';
                 }
             } catch (error) {
                 console.error('獲取數據時出錯:', error);
-                tableBody.innerHTML = '<tr><td colspan="2">載入數據失敗: ' + error.message + '</td></tr>';
+                tableBody.innerHTML = '<tr><td colspan="3">載入數據失敗: ' + error.message + '</td></tr>';
+                alert('載入數據失敗，請稍後再試: ' + error.message);
             }
         }
 
@@ -209,59 +245,39 @@
             try {
                 const response = await fetch('https://www.lovelykurt.com/boss', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({})
                 });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const data = await response.json();
                 const container = document.getElementById('allBossContainer');
                 container.innerHTML = '';
-
                 if (data.data && Array.isArray(data.data)) {
                     data.data.forEach(item => {
                         const card = document.createElement('div');
                         card.className = 'boss-card';
-
                         const img = document.createElement('img');
                         img.src = item.Image || '';
                         img.alt = item.Name || '圖片';
-
                         const namePeriod = document.createElement('div');
-                        // 格式化顯示名稱和時間
-                        const period = item.Period || 0; // 假設每個 Boss 有 Period 屬性，表示小時
+                        const period = item.Period || 0;
                         namePeriod.textContent = `${item.Name || '未提供名稱'} - ${period} 小時`;
-
-                        // 點擊卡片觸發 API 呼叫
                         card.addEventListener('click', async () => {
                             if (confirm(`確定要處理 "${item.Name}" 嗎？`)) {
                                 try {
                                     const res = await fetch('https://www.lovelykurt.com/kill', {
                                         method: 'POST',
-                                        headers: {
-                                            'Content-Type': 'application/json',
-                                        },
+                                        headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ id: item.ID })
                                     });
-
-                                    if (!res.ok) {
-                                        throw new Error(`操作失敗，狀態碼：${res.status}`);
-                                    }
-
-                                    // 成功後，重新載入資料
+                                    if (!res.ok) throw new Error(`操作失敗，狀態碼：${res.status}`);
                                     alert(`${item.Name} 處理成功！`);
-                                    await fetchData(); // 可以根據需要刷新待宰 Boss 的資料
+                                    await fetchData();
                                 } catch (err) {
                                     alert('操作時發生錯誤: ' + err.message);
                                 }
                             }
                         });
-
                         card.appendChild(img);
                         card.appendChild(namePeriod);
                         container.appendChild(card);
@@ -273,13 +289,13 @@
                 console.error('取得全部 Boss 資料失敗:', error);
                 const container = document.getElementById('allBossContainer');
                 container.innerHTML = '<p>載入資料失敗: ' + error.message + '</p>';
+                alert('載入資料失敗，請稍後再試: ' + error.message);
             }
         }
 
         window.onload = () => {
             fetchData();
             fetchAllBoss();
-
             document.getElementById('refreshButton').addEventListener('click', () => {
                 fetchData();
             });
