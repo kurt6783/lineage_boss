@@ -115,6 +115,15 @@
             font-size: 20px;
             color: red;
         }
+
+        .notification-prompt {
+            display: none;
+            padding: 10px;
+            background-color: #ffcccc;
+            border: 1px solid #ff6666;
+            margin: 10px 0;
+            text-align: center;
+        }
     </style>
 </head>
 
@@ -125,6 +134,9 @@
         </div>
         <div class="main-content">
             <div class="left-section">
+                <div id="notificationPrompt" class="notification-prompt">
+                    通知已被禁用，請在瀏覽器設置中允許通知以接收即時更新。
+                </div>
                 <h2>全部 Boss (點選圖片即可紀錄擊殺 Boss 時間)</h2>
                 <div id="allBossContainer" class="boss-grid"></div>
             </div>
@@ -155,6 +167,31 @@
             statusElement.className = className;
         }
 
+        // 檢查並請求通知權限
+        function requestNotificationPermission() {
+            if (Notification.permission === "granted") {
+                console.log("通知權限已授予");
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        console.log("用戶已授予通知權限");
+                    } else {
+                        console.log("用戶拒絕通知權限");
+                        showNotificationPrompt();
+                    }
+                });
+            } else {
+                console.log("通知權限已被拒絕");
+                showNotificationPrompt();
+            }
+        }
+
+        // 顯示通知被禁用的提示
+        function showNotificationPrompt() {
+            const prompt = document.getElementById("notificationPrompt");
+            prompt.style.display = "block";
+        }
+
         // 初始化 SSE 連線的函數
         let source;
         function connectSSE() {
@@ -167,12 +204,37 @@
 
             source.onmessage = function (event) {
                 console.log("收到推送:", event.data);
-                const data = JSON.parse(event.data);
-                if (Notification.permission === "granted") {
-                    new Notification(data.title, {
-                        body: data.body,
-                        icon: "https://via.placeholder.com/50"
-                    });
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.title && data.body) {
+                        if (Notification.permission === "granted") {
+                            console.log("即將顯示通知:", data.title, data.body);
+                            new Notification(data.title, {
+                                body: data.body,
+                                icon: "https://via.placeholder.com/50"
+                            });
+                        } else if (Notification.permission !== "denied") {
+                            Notification.requestPermission().then(permission => {
+                                if (permission === "granted") {
+                                    console.log("權限授予，即將顯示通知:", data.title, data.body);
+                                    new Notification(data.title, {
+                                        body: data.body,
+                                        icon: "https://via.placeholder.com/50"
+                                    });
+                                } else {
+                                    console.log("用戶拒絕通知權限");
+                                    showNotificationPrompt();
+                                }
+                            });
+                        } else {
+                            console.log("通知權限被拒絕，無法顯示通知");
+                            showNotificationPrompt();
+                        }
+                    } else {
+                        console.log("推送資料無效:", data);
+                    }
+                } catch (error) {
+                    console.error("解析推送資料失敗:", error);
                 }
             };
 
@@ -181,9 +243,6 @@
                 updateConnectionStatus("已斷線", "disconnected");
             };
         }
-
-        // 初次連線
-        connectSSE();
 
         const tableBody = document.getElementById('tableBody');
 
@@ -299,6 +358,9 @@
             document.getElementById('refreshButton').addEventListener('click', () => {
                 fetchData();
             });
+            // 在頁面載入時檢查並請求通知權限
+            requestNotificationPermission();
+            connectSSE();
         };
     </script>
 </body>
