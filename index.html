@@ -260,7 +260,7 @@
                     data.data.forEach(item => {
                         const row = document.createElement('tr');
                         const nameCell = document.createElement('td');
-                        nameCell.textContent = item.Name || '未提供名稱';
+                        nameCell.textContent = `${item.Name} (${item.KoreaName})`;
                         row.appendChild(nameCell);
                         const timeCell = document.createElement('td');
                         const date = new Date(item.NextTime);
@@ -272,7 +272,7 @@
                         deleteBtn.className = 'delete-btn';
                         deleteBtn.title = '刪除此 Boss';
                         deleteBtn.addEventListener('click', async () => {
-                            if (confirm(`確定要刪除 "${item.Name}" 嗎？`)) {
+                            if (confirm(`確定要刪除 "${item.Name} (${item.KoreaName})" 嗎？`)) {
                                 try {
                                     const res = await fetch('https://www.lovelykurt.com/delete', {
                                         method: 'POST',
@@ -320,9 +320,9 @@
                         img.alt = item.Name || '圖片';
                         const namePeriod = document.createElement('div');
                         const period = item.Period || 0;
-                        namePeriod.textContent = `${item.Name || '未提供名稱'} - ${period} 小時`;
+                        namePeriod.textContent = `${item.Name} (${item.KoreaName}) - ${period} 小時`;
                         card.addEventListener('click', async () => {
-                            if (confirm(`確定要處理 "${item.Name}" 嗎？`)) {
+                            if (confirm(`確定要處理 "${item.Name} (${item.KoreaName})" 嗎？`)) {
                                 try {
                                     const res = await fetch('https://www.lovelykurt.com/kill', {
                                         method: 'POST',
