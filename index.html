@@ -130,7 +130,8 @@
 <body>
     <div class="container">
         <div class="status-bar">
-            連線狀態: <span id="connection-status" class="connecting">連線中...</span>
+            連線狀態: <span id="connection-status" class="connecting">連線中...</span> ｜ 連線人數: <span
+                id="connection-count">--</span>
         </div>
         <div class="main-content">
             <div class="left-section">
@@ -161,6 +162,20 @@
     </div>
 
     <script>
+        async function updateConnectionCount() {
+            try {
+                const res = await fetch("https://www.lovelykurt.com/count");
+                if (!res.ok) throw new Error("無法取得連線人數");
+                const data = await res.json();
+                const countSpan = document.getElementById("connection-count");
+                countSpan.textContent = data.count ?? '--';
+            } catch (err) {
+                console.error("更新連線人數時出錯:", err);
+                const countSpan = document.getElementById("connection-count");
+                countSpan.textContent = '--';
+            }
+        }
+
         function updateConnectionStatus(status, className) {
             const statusElement = document.getElementById("connection-status");
             statusElement.textContent = status;
@@ -361,6 +376,9 @@
             // 在頁面載入時檢查並請求通知權限
             requestNotificationPermission();
             connectSSE();
+
+            updateConnectionCount(); // 載入時立即執行一次
+            setInterval(updateConnectionCount, 60000); // 每 60 秒更新一次
         };
     </script>
 </body>
