@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,56 +9,48 @@
             margin: 0;
             padding: 0;
             font-family: Arial, sans-serif;
+            font-size: 16px;
         }
 
         .container {
-            height: 100vh;
+            min-height: 100vh;
             display: flex;
             flex-direction: column;
         }
 
         .status-bar {
-            padding: 5px;
+            padding: 8px;
             background-color: #f8f8f8;
             border-bottom: 1px solid #ccc;
             text-align: center;
             flex-shrink: 0;
+            font-size: 0.9rem;
         }
 
         #connection-status {
             font-weight: bold;
-            font-size: 14px;
         }
 
-        .connected {
-            color: green;
-        }
-
-        .disconnected {
-            color: red;
-        }
-
-        .connecting {
-            color: orange;
-        }
+        .connected { color: green; }
+        .disconnected { color: red; }
+        .connecting { color: orange; }
 
         .main-content {
             flex: 1;
             display: flex;
+            flex-direction: column;
             overflow: hidden;
         }
 
-        .left-section {
-            flex: 2;
-            padding: 20px;
+ .left-section {
+            padding: 15px;
             overflow-y: auto;
             background-color: #e0e0e0;
-            border-right: 1px solid #ccc;
+            border-bottom: 1px solid #ccc;
         }
 
         .right-section {
-            flex: 1;
-            padding: 20px;
+            padding: 15px;
             overflow-y: auto;
             background-color: #f0f0f0;
         }
@@ -67,14 +58,15 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 20px;
+            margin-top: 15px;
+            font-size: 0.85rem;
         }
 
-        th,
-        td {
-            padding: 10px;
+        th, td {
+            padding: 8px;
             border: 1px solid #ddd;
             text-align: left;
+            word-wrap: break-word;
         }
 
         th {
@@ -83,37 +75,44 @@
         }
 
         img {
+            max-width: 100%;
+            height: auto;
             max-height: 80px;
         }
 
         .boss-grid {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 16px;
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
         }
 
         .boss-card {
-            flex: 0 1 calc(20% - 16px);
             background: #fff;
             border: 1px solid #ccc;
             border-radius: 8px;
             padding: 10px;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
             text-align: center;
+            cursor: pointer;
         }
 
         .boss-card img {
-            max-width: 100%;
-            max-height: 100px;
+            max-height: 80px;
             margin-bottom: 8px;
+        }
+
+        .boss-card div {
+            font-size: 0.8rem;
+            word-wrap: break-word;
         }
 
         .delete-btn {
             background: none;
             border: none;
             cursor: pointer;
-            font-size: 20px;
+            font-size: 1.2rem;
             color: red;
+            padding: 5px;
         }
 
         .notification-prompt {
@@ -123,15 +122,63 @@
             border: 1px solid #ff6666;
             margin: 10px 0;
             text-align: center;
+            font-size: 0.85rem;
+        }
+
+        #refreshButton {
+            font-size: 1.2rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            margin: 0 0 10px 0;
+        }
+
+        @media (min-width: 768px) {
+            .main-content {
+                flex-direction: row;
+            }
+
+            .left-section {
+                flex: 2;
+                border-bottom: none;
+                border-right: 1px solid #ccc;
+            }
+
+            .right-section {
+                flex: 1;
+            }
+
+            .boss-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .boss-card div {
+                font-size: 0.9rem;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            th, td {
+                padding: 10px;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
-
 <body>
     <div class="container">
         <div class="status-bar">
-            連線狀態: <span id="connection-status" class="connecting">連線中...</span> ｜ 連線人數: <span
-                id="connection-count">--</span>
+            連線狀態: <span id="connection-status" class="connecting">連線中...</span> ｜ 連線人數: <span id="connection-count">--</span>
         </div>
         <div class="main-content">
             <div class="left-section">
@@ -144,8 +191,7 @@
             <div class="right-section">
                 <div style="display: flex; justify-content: space-between; align-items: center;">
                     <h2>待宰 Boss</h2>
-                    <button id="refreshButton" title="重新整理資料"
-                        style="font-size: 20px; cursor: pointer; background: none; border: none;">🔄</button>
+                    <button id="refreshButton" title="重新整理資料">🔄</button>
                 </div>
                 <table id="dataTable">
                     <thead>
@@ -182,7 +228,6 @@
             statusElement.className = className;
         }
 
-        // 檢查並請求通知權限
         function requestNotificationPermission() {
             if (Notification.permission === "granted") {
                 console.log("通知權限已授予");
@@ -201,22 +246,18 @@
             }
         }
 
-        // 顯示通知被禁用的提示
         function showNotificationPrompt() {
             const prompt = document.getElementById("notificationPrompt");
             prompt.style.display = "block";
         }
 
-        // 初始化 SSE 連線的函數
         let source;
         function connectSSE() {
             source = new EventSource('https://www.lovelykurt.com/notify');
-
             source.onopen = function () {
                 console.log("SSE 連線已建立");
                 updateConnectionStatus("已連線", "connected");
             };
-
             source.onmessage = function (event) {
                 console.log("收到推送:", event.data);
                 try {
@@ -252,7 +293,6 @@
                     console.error("解析推送資料失敗:", error);
                 }
             };
-
             source.onerror = function () {
                 console.error("SSE 連線失敗或中斷");
                 updateConnectionStatus("已斷線", "disconnected");
@@ -373,14 +413,11 @@
             document.getElementById('refreshButton').addEventListener('click', () => {
                 fetchData();
             });
-            // 在頁面載入時檢查並請求通知權限
             requestNotificationPermission();
             connectSSE();
-
-            updateConnectionCount(); // 載入時立即執行一次
-            setInterval(updateConnectionCount, 60000); // 每 60 秒更新一次
+            updateConnectionCount();
+            setInterval(updateConnectionCount, 60000);
         };
     </script>
 </body>
-
 </html>
