@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -31,15 +32,24 @@
             font-weight: bold;
         }
 
-        .connected { color: green; }
-        .disconnected { color: red; }
-        .connecting { color: orange; }
+        .connected {
+            color: green;
+        }
+
+        .disconnected {
+            color: red;
+        }
+
+        .connecting {
+            color: orange;
+        }
 
         .main-content {
             flex: 1;
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            /* 修正前次錯誤：移除重複的 overflow */
         }
 
         .left-section {
@@ -62,7 +72,8 @@
             font-size: 0.85rem;
         }
 
-        th, td {
+        th,
+        td {
             padding: 8px;
             border: 1px solid #ddd;
             text-align: left;
@@ -147,7 +158,7 @@
         }
 
         .manual-setting select,
-        .manual-setting input[type="datetime-local"] {
+        .manual-setting input[type="text"] {
             padding: 5px;
             font-size: 0.9rem;
             border: 1px solid #ccc;
@@ -195,7 +206,8 @@
                 font-size: 0.9rem;
             }
 
-            th, td {
+            th,
+            td {
                 padding: 10px;
             }
 
@@ -205,10 +217,12 @@
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <div class="status-bar">
-            連線狀態: <span id="connection-status" class="connecting">連線中...</span> ｜ 連線人數: <span id="connection-count">--</span>
+            連線狀態: <span id="connection-status" class="connecting">連線中...</span> ｜ 連線人數: <span
+                id="connection-count">--</span>
         </div>
         <div class="main-content">
             <div class="left-section">
@@ -224,7 +238,7 @@
                     <select id="bossSelect">
                         <option value="">選擇 Boss</option>
                     </select>
-                    <input type="datetime-local" id="killTime" />
+                    <input type="text" id="killTimeDisplay" placeholder="YYYY/MM/DD HH:mm:ss" />
                     <button id="submitKill">送出</button>
                 </div>
                 <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -246,9 +260,11 @@
     </div>
 
     <script>
+        const BASE_URL = 'https://www.lovelykurt.com';
+
         async function updateConnectionCount() {
             try {
-                const res = await fetch("https://www.lovelykurt.com/count");
+                const res = await fetch(`${BASE_URL}/count`);
                 if (!res.ok) throw new Error("無法取得連線人數");
                 const data = await res.json();
                 const countSpan = document.getElementById("connection-count");
@@ -291,7 +307,7 @@
 
         let source;
         function connectSSE() {
-            source = new EventSource('https://www.lovelykurt.com/notify');
+            source = new EventSource(`${BASE_URL}/notify`);
             source.onopen = function () {
                 console.log("SSE 連線已建立");
                 updateConnectionStatus("已連線", "connected");
@@ -341,7 +357,7 @@
 
         async function fetchData() {
             try {
-                const response = await fetch('https://www.lovelykurt.com/killList', {
+                const response = await fetch(`${BASE_URL}/killList`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({})
@@ -353,11 +369,21 @@
                     data.data.forEach(item => {
                         const row = document.createElement('tr');
                         const nameCell = document.createElement('td');
-                        nameCell.textContent = `${item.Name} (${item.KoreaName})`;
+                        nameCell.textContent = `${item.Name}(${item.KoreaName})`;
                         row.appendChild(nameCell);
                         const timeCell = document.createElement('td');
                         const date = new Date(item.NextTime);
-                        timeCell.textContent = item.NextTime ? date.toLocaleString('zh-TW') : '未提供時間';
+                        if (item.NextTime) {
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const hours = String(date.getHours()).padStart(2, '0');
+                            const minutes = String(date.getMinutes()).padStart(2, '0');
+                            const seconds = String(date.getSeconds()).padStart(2, '0');
+                            timeCell.textContent = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+                        } else {
+                            timeCell.textContent = '未提供時間';
+                        }
                         row.appendChild(timeCell);
                         const actionCell = document.createElement('td');
                         const deleteBtn = document.createElement('button');
@@ -367,7 +393,7 @@
                         deleteBtn.addEventListener('click', async () => {
                             if (confirm(`確定要刪除 "${item.Name} (${item.KoreaName})" 嗎？`)) {
                                 try {
-                                    const res = await fetch('https://www.lovelykurt.com/delete', {
+                                    const res = await fetch(`${BASE_URL}/delete`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ id: item.ID })
@@ -396,7 +422,7 @@
         let allBosses = [];
         async function fetchAllBoss() {
             try {
-                const response = await fetch('https://www.lovelykurt.com/boss', {
+                const response = await fetch(`${BASE_URL}/boss`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({})
@@ -410,7 +436,6 @@
                 if (data.data && Array.isArray(data.data)) {
                     allBosses = data.data;
                     data.data.forEach(item => {
-                        // Populate boss grid
                         const card = document.createElement('div');
                         card.className = 'boss-card';
                         const img = document.createElement('img');
@@ -418,16 +443,16 @@
                         img.alt = item.Name || '圖片';
                         const namePeriod = document.createElement('div');
                         const period = item.Period || 0;
-                        namePeriod.textContent = `${item.Name} (${item.KoreaName}) - ${period} 小時`;
+                        namePeriod.textContent = `${item.Name}(${item.KoreaName}) - ${period} 小時`;
                         card.addEventListener('click', async () => {
                             if (confirm(`確定要處理 "${item.Name} (${item.KoreaName})" 嗎？`)) {
                                 try {
-                                    const res = await fetch('https://www.lovelykurt.com/kill', {
+                                    const res = await fetch(`${BASE_URL}/kill`, {
                                         method: 'POST',
                                         headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ id: item.ID })
                                     });
-                                    if (!res.ok) throw newhewsError(`操作失敗，狀態碼：${res.status}`);
+                                    if (!res.ok) throw new Error(`操作失敗，狀態碼：${res.status}`);
                                     alert(`${item.Name} 處理成功！`);
                                     await fetchData();
                                 } catch (err) {
@@ -439,10 +464,9 @@
                         card.appendChild(namePeriod);
                         container.appendChild(card);
 
-                        // Populate dropdown
                         const option = document.createElement('option');
                         option.value = item.ID;
-                        option.textContent = `${item.Name} (${item.KoreaName})`;
+                        option.textContent = `${item.Name}(${item.KoreaName})`;
                         bossSelect.appendChild(option);
                     });
                 } else {
@@ -457,36 +481,65 @@
             }
         }
 
+        // 格式化日期為 YYYY/MM/DD HH:mm:ss
+        function formatDateTime(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+        }
+
+        // 設置預設時間為當前本地時間
         function setDefaultTime() {
-            const now = new Date();
-            const offset = 8 * 60; // UTC+8 in minutes
-            const utc = now.getTime()
-            const taiwanTime = new Date(utc + (3600000 * 8));
-            const formatted = taiwanTime.toISOString().slice(0, 16);
-            document.getElementById('killTime').value = formatted;
+            const now = new Date(); // 直接使用本地時間
+            document.getElementById('killTimeDisplay').value = formatDateTime(now);
         }
 
         async function submitCustomKill() {
             const bossId = document.getElementById('bossSelect').value;
-            const killTime = document.getElementById('killTime').value;
+            const killTimeInput = document.getElementById('killTimeDisplay').value;
 
             if (!bossId) {
                 alert('請選擇一個 Boss');
                 return;
             }
-            if (!killTime) {
-                alert('請選擇擊殺時間');
+            if (!killTimeInput) {
+                alert('請輸入擊殺時間');
+                return;
+            }
+
+            // 驗證時間格式
+            const regex = /^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
+            const match = killTimeInput.match(regex);
+            if (!match) {
+                alert('時間格式錯誤，請使用 YYYY/MM/DD HH:mm:ss');
+                return;
+            }
+
+            const year = match[1];
+            const month = match[2] - 1; // 月份從 0 開始
+            const day = match[3];
+            const hours = match[4];
+            const minutes = match[5];
+            const seconds = match[6];
+            const date = new Date(year, month, day, hours, minutes, seconds);
+
+            if (isNaN(date)) {
+                alert('無效的時間，請檢查輸入');
                 return;
             }
 
             try {
                 const selectedBoss = allBosses.find(boss => boss.ID == bossId);
-                const res = await fetch('https://www.lovelykurt.com/killCustomization', {
+                const res = await fetch(`${BASE_URL}/killCustomization`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         id: parseInt(bossId, 10),
-                        time: new Date(killTime).toISOString()
+                        time: date.toISOString() // 轉為 ISO 格式
                     })
                 });
                 if (!res.ok) throw new Error(`操作失敗，狀態碼：${res.status}`);
@@ -509,7 +562,32 @@
             connectSSE();
             updateConnectionCount();
             setInterval(updateConnectionCount, 60000);
+
+            // 驗證手動輸入的時間格式
+            const killTimeDisplay = document.getElementById('killTimeDisplay');
+            killTimeDisplay.addEventListener('change', () => {
+                const input = killTimeDisplay.value;
+                const regex = /^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
+                const match = input.match(regex);
+                if (!match) {
+                    alert('時間格式錯誤，請使用 YYYY/MM/DD HH:mm:ss');
+                    setDefaultTime();
+                    return;
+                }
+                const year = match[1];
+                const month = match[2] - 1;
+                const day = match[3];
+                const hours = match[4];
+                const minutes = match[5];
+                const seconds = match[6];
+                const date = new Date(year, month, day, hours, minutes, seconds);
+                if (isNaN(date)) {
+                    alert('無效的時間格式，請使用 YYYY/MM/DD HH:mm:ss');
+                    setDefaultTime();
+                }
+            });
         };
     </script>
 </body>
+
 </html>
