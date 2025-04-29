@@ -1,134 +1,673 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="zh-TW">
 
 <head>
     <meta charset="UTF-8">
-    <title>登入頁面</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>豪豪團K王</title>
     <style>
         body {
+            margin: 0;
+            padding: 0;
             font-family: Arial, sans-serif;
-            padding: 50px;
+            font-size: 16px;
+        }
+
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-bar {
+            padding: 8px;
+            background-color: #f8f8f8;
+            border-bottom: 1px solid #ccc;
+            text-align: center;
+            flex-shrink: 0;
+            font-size: 0.9rem;
+        }
+
+        #connection-status {
+            font-weight: bold;
+        }
+
+        .connected {
+            color: green;
+        }
+
+        .disconnected {
+            color: red;
+        }
+
+        .connecting {
+            color: orange;
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .left-section {
+            padding: 15px;
+            overflow-y: auto;
+            background-color: #e0e0e0;
+            border-bottom: 1px solid #ccc;
+        }
+
+        .right-section {
+            padding: 15px;
+            overflow-y: auto;
             background-color: #f0f0f0;
         }
 
-        .login-form {
-            max-width: 300px;
-            margin: auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .login-form h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .login-form label {
-            display: block;
-            margin-top: 10px;
-        }
-
-        .login-form input[type="text"],
-        .login-form input[type="password"] {
+        table {
             width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.85rem;
+        }
+
+        th,
+        td {
+            padding: 8px;
+            border: 1px solid #ddd;
+            text-align: left;
+            word-wrap: break-word;
+        }
+
+        th {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            max-height: 80px;
+        }
+
+        .boss-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 12px;
+        }
+
+        .boss-card {
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 8px;
             padding: 10px;
-            margin-top: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .boss-card img {
+            max-height: 80px;
+            margin-bottom: 8px;
+        }
+
+        .boss-card div {
+            font-size: 0.8rem;
+            word-wrap: break-word;
+        }
+
+        .delete-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: red;
+            padding: 5px;
+        }
+
+        .notification-prompt {
+            display: none;
+            padding: 10px;
+            background-color: #ffcccc;
+            border: 1px solid #ff6666;
+            margin: 10px 0;
+            text-align: center;
+            font-size: 0.85rem;
+        }
+
+        #refreshButton {
+            font-size: 1.2rem;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+
+        h2 {
+            font-size: 1.2rem;
+            margin: 0 0 10px 0;
+        }
+
+        .manual-setting {
+            margin: 15px 0;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .manual-setting select,
+        .manual-setting input[type="text"] {
+            padding: 5px;
+            font-size: 0.9rem;
             border: 1px solid #ccc;
             border-radius: 4px;
-            box-sizing: border-box;
         }
 
-        .login-form button {
-            width: 100%;
-            padding: 10px;
+        .manual-setting button {
+            padding: 6px 12px;
             background-color: #4CAF50;
             color: white;
             border: none;
             border-radius: 4px;
             cursor: pointer;
-            margin-top: 15px;
+            font-size: 0.9rem;
         }
 
-        .login-form button:hover {
+        .manual-setting button:hover {
             background-color: #45a049;
         }
 
-        .error-message {
-            color: red;
-            text-align: center;
-            margin-top: 10px;
+        @media (min-width: 768px) {
+            .main-content {
+                flex-direction: row;
+            }
+
+            .left-section {
+                flex: 2;
+                border-bottom: none;
+                border-right: 1px solid #ccc;
+            }
+
+            .right-section {
+                flex: 1;
+            }
+
+            .boss-grid {
+                grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            }
+
+            .boss-card div {
+                font-size: 0.9rem;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            th,
+            td {
+                padding: 10px;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
 
 <body>
-    <form class="login-form" id="loginForm">
-        <h2>登入</h2>
-
-        <label for="username">帳號</label>
-        <input type="text" id="username" name="username" required>
-
-        <label for="password">密碼</label>
-        <input type="password" id="password" name="password" required>
-
-        <button type="submit">登入</button>
-
-        <div class="error-message" id="errorMessage"></div>
-    </form>
+    <div class="container">
+        <div class="status-bar">
+            連線狀態: <span id="connection-status" class="connecting">連線中...</span> ｜ 連線人數: <span
+                id="connection-count">--</span> ｜ Donate專線: 823-88665202012214(請附上姓名後續會有英雄榜)
+        </div>
+        <div class="main-content">
+            <div class="left-section">
+                <div id="notificationPrompt" class="notification-prompt">
+                    通知已被禁用，請在瀏覽器設置中允許通知以接收即時更新。
+                </div>
+                <h2>全部 Boss (點選圖片即可紀錄擊殺 Boss 時間)</h2>
+                <div id="allBossContainer" class="boss-grid"></div>
+            </div>
+            <div class="right-section">
+                <h2>手動設定</h2>
+                <div class="manual-setting">
+                    <select id="bossSelect">
+                        <option value="">選擇 Boss</option>
+                    </select>
+                    <input type="text" id="killTimeDisplay" placeholder="YYYY/MM/DD HH:mm:ss" />
+                    <button id="submitKill">送出</button>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>待宰 Boss</h2>
+                    <button id="refreshButton" title="重新整理資料">🔄</button>
+                </div>
+                <table id="dataTable">
+                    <thead>
+                        <tr>
+                            <th>名稱</th>
+                            <th>下次時間</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 
     <script>
         const BASE_URL = 'https://www.lovelykurt.com';
         // const BASE_URL = 'http://localhost:8080';
 
-        window.onload = () => {
-            document.getElementById("errorMessage").textContent = "";
-            document.getElementById("username").value = "";
-            document.getElementById("password").value = "";
-        };
-
-        document.getElementById("loginForm").addEventListener("submit", async function (event) {
-            event.preventDefault();
-            const username = document.getElementById("username").value.trim();
-            const password = document.getElementById("password").value.trim();
-            const errorMessage = document.getElementById("errorMessage");
-            errorMessage.textContent = "";
-            if (!username || !password) {
-                errorMessage.textContent = "帳號和密碼不能為空";
-                return;
+        // 檢查 token 是否存在，若無則跳轉到 login.html
+        function checkAuth() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                window.location.href = 'login.html';
+                return false;
             }
+            return true;
+        }
+
+        // 獲取帶有 Authorization Header 的 fetch 配置
+        function getAuthHeaders() {
+            const token = localStorage.getItem('token');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
+        async function updateConnectionCount() {
             try {
-                const response = await fetch(`${BASE_URL}/login`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username, password })
+                const res = await fetch(`${BASE_URL}/count`, {
+                    headers: getAuthHeaders()
                 });
-                console.log('Response status:', response.status);
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error("無法取得連線人數");
+                }
+                const data = await res.json();
+                const countSpan = document.getElementById("connection-count");
+                countSpan.textContent = data.count ?? '--';
+            } catch (err) {
+                console.error("更新連線人數時出錯:", err);
+                const countSpan = document.getElementById("connection-count");
+                countSpan.textContent = '--';
+            }
+        }
+
+        function updateConnectionStatus(status, className) {
+            const statusElement = document.getElementById("connection-status");
+            statusElement.textContent = status;
+            statusElement.className = className;
+        }
+
+        function requestNotificationPermission() {
+            if (Notification.permission === "granted") {
+                console.log("通知權限已授予");
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        console.log("用戶已授予通知權限");
+                    } else {
+                        console.log("用戶拒絕通知權限");
+                        showNotificationPrompt();
+                    }
+                });
+            } else {
+                console.log("通知權限已被拒絕");
+                showNotificationPrompt();
+            }
+        }
+
+        function showNotificationPrompt() {
+            const prompt = document.getElementById("notificationPrompt");
+            prompt.style.display = "block";
+        }
+
+        let source;
+        function connectSSE() {
+            const token = localStorage.getItem('token');
+            // 使用 query parameter 傳遞 token，因為 EventSource 不支援自定義 Header
+            source = new EventSource(`${BASE_URL}/notify`);
+            source.onopen = function () {
+                console.log("SSE 連線已建立");
+                updateConnectionStatus("已連線", "connected");
+            };
+            source.onmessage = function (event) {
+                console.log("收到推送:", event.data);
+                try {
+                    const data = JSON.parse(event.data);
+                    if (data.title && data.body) {
+                        if (Notification.permission === "granted") {
+                            console.log("即將顯示通知:", data.title, data.body);
+                            new Notification(data.title, {
+                                body: data.body,
+                                icon: "https://via.placeholder.com/50"
+                            });
+                        } else if (Notification.permission !== "denied") {
+                            Notification.requestPermission().then(permission => {
+                                if (permission === "granted") {
+                                    console.log("權限授予，即將顯示通知:", data.title, data.body);
+                                    new Notification(data.title, {
+                                        body: data.body,
+                                        icon: "https://via.placeholder.com/50"
+                                    });
+                                } else {
+                                    console.log("用戶拒絕通知權限");
+                                    showNotificationPrompt();
+                                }
+                            });
+                        } else {
+                            console.log("通知權限被拒絕，無法顯示通知");
+                            showNotificationPrompt();
+                        }
+                    } else {
+                        console.log("推送資料無效:", data);
+                    }
+                } catch (error) {
+                    console.error("解析推送資料失敗:", error);
+                }
+            };
+            source.onerror = function () {
+                console.error("SSE 連線失敗或中斷");
+                updateConnectionStatus("已斷線", "disconnected");
+                // 如果 SSE 連線失敗，檢查是否為認證問題
+                if (localStorage.getItem('token')) {
+                    checkTokenValidity();
+                }
+            };
+        }
+
+        // 檢查 token 是否有效（可選，根據後端實現）
+        async function checkTokenValidity() {
+            try {
+                const res = await fetch(`${BASE_URL}/api/profile`, {
+                    headers: getAuthHeaders()
+                });
+                if (res.status === 401) {
+                    localStorage.removeItem('token');
+                    window.location.href = 'login.html';
+                }
+            } catch (err) {
+                console.error("驗證 token 失敗:", err);
+            }
+        }
+
+        const tableBody = document.getElementById('tableBody');
+
+        async function fetchData() {
+            try {
+                const response = await fetch(`${BASE_URL}/killList`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({})
+                });
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || "登入失敗，請檢查帳號或密碼");
+                    if (response.status === 401) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
-                console.log('Login response data:', data);
-                if (data && data.token && data.user && data.user.username) {
-                    localStorage.setItem("token", data.token);
-                    localStorage.setItem("username", data.user.username);
-                    localStorage.setItem("name", data.user.name);
-                    localStorage.setItem("role", data.user.role);
-                    console.log('Token stored:', localStorage.getItem('token'));
-                    if (!localStorage.getItem("token")) {
-                        throw new Error("無法儲存 token，請檢查瀏覽器設定或禁用隱私模式");
-                    }
-                    window.location.href = "index.html";
+                tableBody.innerHTML = '';
+                if (data.data && Array.isArray(data.data)) {
+                    data.data.forEach(item => {
+                        const row = document.createElement('tr');
+                        const nameCell = document.createElement('td');
+                        nameCell.textContent = `${item.Name}(${item.KoreaName})`;
+                        row.appendChild(nameCell);
+                        const timeCell = document.createElement('td');
+                        const date = new Date(item.NextTime);
+                        if (item.NextTime) {
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const hours = String(date.getHours()).padStart(2, '0');
+                            const minutes = String(date.getMinutes()).padStart(2, '0');
+                            const seconds = String(date.getSeconds()).padStart(2, '0');
+                            timeCell.textContent = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+                        } else {
+                            timeCell.textContent = '未提供時間';
+                        }
+                        row.appendChild(timeCell);
+                        const actionCell = document.createElement('td');
+                        const deleteBtn = document.createElement('button');
+                        deleteBtn.innerHTML = '❌';
+                        deleteBtn.className = 'delete-btn';
+                        deleteBtn.title = '刪除此 Boss';
+                        deleteBtn.addEventListener('click', async () => {
+                            if (confirm(`確定要刪除 "${item.Name} (${item.KoreaName})" 嗎？`)) {
+                                try {
+                                    const res = await fetch(`${BASE_URL}/delete`, {
+                                        method: 'POST',
+                                        headers: getAuthHeaders(),
+                                        body: JSON.stringify({ id: item.ID })
+                                    });
+                                    if (!res.ok) {
+                                        if (res.status === 401) {
+                                            window.location.href = 'login.html';
+                                            return;
+                                        }
+                                        throw new Error(`刪除失敗，狀態碼：${res.status}`);
+                                    }
+                                    await fetchData();
+                                } catch (err) {
+                                    alert('刪除時發生錯誤: ' + err.message);
+                                }
+                            }
+                        });
+                        actionCell.appendChild(deleteBtn);
+                        row.appendChild(actionCell);
+                        tableBody.appendChild(row);
+                    });
                 } else {
-                    throw new Error("回傳資料格式錯誤");
+                    tableBody.innerHTML = '<tr><td colspan="3">無可用數據</td></tr>';
                 }
             } catch (error) {
-                console.error('Login error:', error);
-                errorMessage.textContent = error.message;
+                console.error('獲取數據時出錯:', error);
+                tableBody.innerHTML = '<tr><td colspan="3">載入數據失敗: ' + error.message + '</td></tr>';
+                alert('載入數據失敗，請稍後再試: ' + error.message);
             }
-        });
+        }
+
+        let allBosses = [];
+        async function fetchAllBoss() {
+            try {
+                const response = await fetch(`${BASE_URL}/boss`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({})
+                });
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                const container = document.getElementById('allBossContainer');
+                const bossSelect = document.getElementById('bossSelect');
+                container.innerHTML = '';
+                bossSelect.innerHTML = '<option value="">選擇 Boss</option>';
+                if (data.data && Array.isArray(data.data)) {
+                    allBosses = data.data;
+                    data.data.forEach(item => {
+                        const card = document.createElement('div');
+                        card.className = 'boss-card';
+                        const img = document.createElement('img');
+                        img.src = item.Image || '';
+                        img.alt = item.Name || '圖片';
+                        const namePeriod = document.createElement('div');
+                        const period = item.Period || 0;
+                        namePeriod.textContent = `${item.Name}(${item.KoreaName}) - ${period} 小時`;
+                        card.addEventListener('click', async () => {
+                            if (confirm(`確定要處理 "${item.Name} (${item.KoreaName})" 嗎？`)) {
+                                try {
+                                    const res = await fetch(`${BASE_URL}/kill`, {
+                                        method: 'POST',
+                                        headers: getAuthHeaders(),
+                                        body: JSON.stringify({ id: item.ID })
+                                    });
+                                    if (!res.ok) {
+                                        if (res.status === 401) {
+                                            window.location.href = 'login.html';
+                                            return;
+                                        }
+                                        throw new Error(`操作失敗，狀態碼：${res.status}`);
+                                    }
+                                    alert(`${item.Name} 處理成功！`);
+                                    await fetchData();
+                                } catch (err) {
+                                    alert('操作時發生錯誤: ' + err.message);
+                                }
+                            }
+                        });
+                        card.appendChild(img);
+                        card.appendChild(namePeriod);
+                        container.appendChild(card);
+
+                        const option = document.createElement('option');
+                        option.value = item.ID;
+                        option.textContent = `${item.Name}(${item.KoreaName})`;
+                        bossSelect.appendChild(option);
+                    });
+                } else {
+                    container.innerHTML = '<p>無可用資料</p>';
+                    bossSelect.innerHTML = '<option value="">無可用 Boss</option>';
+                }
+            } catch (error) {
+                console.error('取得全部 Boss 資料失敗:', error);
+                const container = document.getElementById('allBossContainer');
+                container.innerHTML = '<p>載入資料失敗: ' + error.message + '</p>';
+                alert('載入資料失敗，請稍後再試: ' + error.message);
+            }
+        }
+
+        // 格式化日期為 YYYY/MM/DD HH:mm:ss
+        function formatDateTime(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            const hours = String(date.getHours()).padStart(2, '0');
+            const minutes = String(date.getMinutes()).padStart(2, '0');
+            const seconds = String(date.getSeconds()).padStart(2, '0');
+            return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+        }
+
+        // 設置預設時間為當前本地時間
+        function setDefaultTime() {
+            const now = new Date();
+            document.getElementById('killTimeDisplay').value = formatDateTime(now);
+        }
+
+        async function submitCustomKill() {
+            const bossId = document.getElementById('bossSelect').value;
+            const killTimeInput = document.getElementById('killTimeDisplay').value;
+
+            if (!bossId) {
+                alert('請選擇一個 Boss');
+                return;
+            }
+            if (!killTimeInput) {
+                alert('請輸入擊殺時間');
+                return;
+            }
+
+            // 驗證時間格式
+            const regex = /^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
+            const match = killTimeInput.match(regex);
+            if (!match) {
+                alert('時間格式錯誤，請使用 YYYY/MM/DD HH:mm:ss');
+                return;
+            }
+
+            const year = match[1];
+            const month = match[2] - 1;
+            const day = match[3];
+            const hours = match[4];
+            const minutes = match[5];
+            const seconds = match[6];
+            const date = new Date(year, month, day, hours, minutes, seconds);
+
+            if (isNaN(date)) {
+                alert('無效的時間，請檢查輸入');
+                return;
+            }
+
+            try {
+                const selectedBoss = allBosses.find(boss => boss.ID == bossId);
+                const res = await fetch(`${BASE_URL}/killCustomization`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({
+                        id: parseInt(bossId, 10),
+                        time: date.toISOString()
+                    })
+                });
+                if (!res.ok) {
+                    if (res.status === 401) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error(`操作失敗，狀態碼：${res.status}`);
+                }
+                alert(`${selectedBoss.Name} 處理成功！`);
+                await fetchData();
+            } catch (err) {
+                alert('操作時發生錯誤: ' + err.message);
+            }
+        }
+
+        window.onload = () => {
+            // 檢查是否已登入
+            if (!checkAuth()) return;
+
+            fetchData();
+            fetchAllBoss();
+            setDefaultTime();
+            document.getElementById('refreshButton').addEventListener('click', () => {
+                fetchData();
+            });
+            document.getElementById('submitKill').addEventListener('click', submitCustomKill);
+            requestNotificationPermission();
+            connectSSE();
+            updateConnectionCount();
+            setInterval(updateConnectionCount, 60000);
+
+            // 驗證手動輸入的時間格式
+            const killTimeDisplay = document.getElementById('killTimeDisplay');
+            killTimeDisplay.addEventListener('change', () => {
+                const input = killTimeDisplay.value;
+                const regex = /^(\d{4})\/(\d{2})\/(\d{2}) (\d{2}):(\d{2}):(\d{2})$/;
+                const match = input.match(regex);
+                if (!match) {
+                    alert('時間格式錯誤，請使用 YYYY/MM/DD HH:mm:ss');
+                    setDefaultTime();
+                    return;
+                }
+                const year = match[1];
+                const month = match[2] - 1;
+                const day = match[3];
+                const hours = match[4];
+                const minutes = match[5];
+                const seconds = match[6];
+                const date = new Date(year, month, day, hours, minutes, seconds);
+                if (isNaN(date)) {
+                    alert('無效的時間格式，請使用 YYYY/MM/DD HH:mm:ss');
+                    setDefaultTime();
+                }
+            });
+        };
     </script>
 </body>
 
