@@ -135,7 +135,8 @@
             font-size: 0.85rem;
         }
 
-        #refreshButton {
+        #refreshButton,
+        #refreshKillRecordsButton {
             font-size: 1.2rem;
             cursor: pointer;
             background: none;
@@ -221,7 +222,7 @@
     <div class="container">
         <div class="status-bar">
             連線狀態: <span id="connection-status" class="connecting">連線中...</span> ｜ 連線人數: <span
-                id="connection-count">--</span> ｜ Donate專線: 823-88665202012214(請附上姓名後續會有英雄榜)
+                id="connection-count">--</span> ｜ Donate專戶: 823-88665202012214(請附上姓名後續會有英雄榜)
         </div>
         <div class="main-content">
             <div class="left-section">
@@ -253,6 +254,21 @@
                         </tr>
                     </thead>
                     <tbody id="tableBody"></tbody>
+                </table>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2>擊殺紀錄</h2>
+                    <button id="refreshKillRecordsButton" title="重新整理擊殺紀錄">🔄</button>
+                </div>
+                <table id="killRecordsTable">
+                    <thead>
+                        <tr>
+                            <th>名稱</th>
+                            <th>擊殺者</th>
+                            <th>伺服器位置</th>
+                            <th>擊殺時間</th>
+                        </tr>
+                    </thead>
+                    <tbody id="killRecordsTableBody"></tbody>
                 </table>
             </div>
         </div>
@@ -335,7 +351,6 @@
         let source;
         function connectSSE() {
             const token = localStorage.getItem('token');
-            // 使用 query parameter 傳遞 token，因為 EventSource 不支援自定義 Header
             source = new EventSource(`${BASE_URL}/notify`);
             source.onopen = function () {
                 console.log("SSE 連線已建立");
@@ -379,14 +394,12 @@
             source.onerror = function () {
                 console.error("SSE 連線失敗或中斷");
                 updateConnectionStatus("已斷線", "disconnected");
-                // 如果 SSE 連線失敗，檢查是否為認證問題
                 if (localStorage.getItem('token')) {
                     checkTokenValidity();
                 }
             };
         }
 
-        // 檢查 token 是否有效（可選，根據後端實現）
         async function checkTokenValidity() {
             try {
                 const res = await fetch(`${BASE_URL}/api/profile`, {
@@ -479,6 +492,64 @@
             }
         }
 
+        const killRecordsTableBody = document.getElementById('killRecordsTableBody');
+
+        async function fetchKillRecords() {
+            try {
+                const response = await fetch(`${BASE_URL}/killRecord`, {
+                    method: 'POST',
+                    headers: getAuthHeaders(),
+                    body: JSON.stringify({})
+                });
+                if (!response.ok) {
+                    if (response.status === 401) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('Kill Records API Response:', JSON.stringify(data, null, 2)); // 詳細調試日誌
+                killRecordsTableBody.innerHTML = '';
+                if (data.data && Array.isArray(data.data)) {
+                    data.data.forEach(item => {
+                        console.log('Processing item:', item); // 每條記錄的調試日誌
+                        const row = document.createElement('tr');
+                        const nameCell = document.createElement('td');
+                        nameCell.textContent = item.BossName || '未知';
+                        row.appendChild(nameCell);
+                        const killerCell = document.createElement('td');
+                        killerCell.textContent = item.Killer || '無';
+                        row.appendChild(killerCell);
+                        const serverLocationCell = document.createElement('td');
+                        serverLocationCell.textContent = item.ServerLocation || '無';
+                        row.appendChild(serverLocationCell);
+                        const timeCell = document.createElement('td');
+                        const date = new Date(item.NextTime);
+                        if (item.NextTime && !isNaN(date)) {
+                            const year = date.getFullYear();
+                            const month = String(date.getMonth() + 1).padStart(2, '0');
+                            const day = String(date.getDate()).padStart(2, '0');
+                            const hours = String(date.getHours()).padStart(2, '0');
+                            const minutes = String(date.getMinutes()).padStart(2, '0');
+                            const seconds = String(date.getSeconds()).padStart(2, '0');
+                            timeCell.textContent = `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+                        } else {
+                            timeCell.textContent = '無效時間';
+                        }
+                        row.appendChild(timeCell);
+                        killRecordsTableBody.appendChild(row);
+                    });
+                } else {
+                    killRecordsTableBody.innerHTML = '<tr><td colspan="4">無擊殺紀錄</td></tr>';
+                }
+            } catch (error) {
+                console.error('獲取擊殺紀錄時出錯:', error);
+                killRecordsTableBody.innerHTML = '<tr><td colspan="4">載入擊殺紀錄失敗: ' + error.message + '</td></tr>';
+                alert('載入擊殺紀錄失敗，請稍後再試: ' + error.message);
+            }
+        }
+
         let allBosses = [];
         async function fetchAllBoss() {
             try {
@@ -527,6 +598,7 @@
                                     }
                                     alert(`${item.Name} 處理成功！`);
                                     await fetchData();
+                                    await fetchKillRecords();
                                 } catch (err) {
                                     alert('操作時發生錯誤: ' + err.message);
                                 }
@@ -623,20 +695,24 @@
                 }
                 alert(`${selectedBoss.Name} 處理成功！`);
                 await fetchData();
+                await fetchKillRecords();
             } catch (err) {
                 alert('操作時發生錯誤: ' + err.message);
             }
         }
 
         window.onload = () => {
-            // 檢查是否已登入
             if (!checkAuth()) return;
 
             fetchData();
             fetchAllBoss();
+            fetchKillRecords();
             setDefaultTime();
             document.getElementById('refreshButton').addEventListener('click', () => {
                 fetchData();
+            });
+            document.getElementById('refreshKillRecordsButton').addEventListener('click', () => {
+                fetchKillRecords();
             });
             document.getElementById('submitKill').addEventListener('click', submitCustomKill);
             requestNotificationPermission();
@@ -644,7 +720,6 @@
             updateConnectionCount();
             setInterval(updateConnectionCount, 60000);
 
-            // 驗證手動輸入的時間格式
             const killTimeDisplay = document.getElementById('killTimeDisplay');
             killTimeDisplay.addEventListener('change', () => {
                 const input = killTimeDisplay.value;
