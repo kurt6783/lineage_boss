@@ -4,63 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>登入頁面</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            padding: 50px;
-            background-color: #f0f0f0;
-        }
-
-        .login-form {
-            max-width: 300px;
-            margin: auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .login-form h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        .login-form label {
-            display: block;
-            margin-top: 10px;
-        }
-
-        .login-form input[type="text"],
-        .login-form input[type="password"] {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-
-        .login-form button {
-            width: 100%;
-            padding: 10px;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            margin-top: 15px;
-        }
-
-        .login-form button:hover {
-            background-color: #45a049;
-        }
-
-        .error-message {
-            color: red;
-            text-align: center;
-            margin-top: 10px;
-        }
-    </style>
+    <link rel="stylesheet" href="login.css">
 </head>
 
 <body>
@@ -78,58 +22,7 @@
         <div class="error-message" id="errorMessage"></div>
     </form>
 
-    <script>
-        const BASE_URL = 'https://www.lovelykurt.com';
-        // const BASE_URL = 'http://localhost:8080';
-
-        window.onload = () => {
-            document.getElementById("errorMessage").textContent = "";
-            document.getElementById("username").value = "";
-            document.getElementById("password").value = "";
-        };
-
-        document.getElementById("loginForm").addEventListener("submit", async function (event) {
-            event.preventDefault();
-            const username = document.getElementById("username").value.trim();
-            const password = document.getElementById("password").value.trim();
-            const errorMessage = document.getElementById("errorMessage");
-            errorMessage.textContent = "";
-            if (!username || !password) {
-                errorMessage.textContent = "帳號和密碼不能為空";
-                return;
-            }
-            try {
-                const response = await fetch(`${BASE_URL}/login`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ username, password })
-                });
-                console.log('Response status:', response.status);
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    throw new Error(errorData.error || "登入失敗，請檢查帳號或密碼");
-                }
-                const data = await response.json();
-                console.log('Login response data:', data);
-                if (data && data.token && data.user && data.user.username) {
-                    localStorage.setItem("token", data.token);
-                    localStorage.setItem("username", data.user.username);
-                    localStorage.setItem("name", data.user.name);
-                    localStorage.setItem("role", data.user.role);
-                    console.log('Token stored:', localStorage.getItem('token'));
-                    if (!localStorage.getItem("token")) {
-                        throw new Error("無法儲存 token，請檢查瀏覽器設定或禁用隱私模式");
-                    }
-                    window.location.href = "index.html";
-                } else {
-                    throw new Error("回傳資料格式錯誤");
-                }
-            } catch (error) {
-                console.error('Login error:', error);
-                errorMessage.textContent = error.message;
-            }
-        });
-    </script>
+    <script src="login.js"></script>
 </body>
 
 </html>
