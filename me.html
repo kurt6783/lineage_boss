@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <title>我的資料</title>
+    <link rel="stylesheet" href="me.css">
+    <link rel="stylesheet" href="sidebar.css" />
+</head>
+
+<body>
+    <div id="sidebarContainer"></div>
+    <form class="me-form" id="meForm">
+        <h2>使用者資料</h2>
+
+        <label for="name">遊戲名稱</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="line_name">LINE 名稱</label>
+        <input type="text" id="line_name" name="line_name" required>
+
+        <label for="server_location">伺服器位置</label>
+        <input type="text" id="server_location" name="server_location" required>
+
+        <button type="submit">更新資訊</button>
+
+        <div class="error-message" id="errorMessage"></div>
+        <div class="success-message" id="successMessage"></div>
+    </form>
+
+    <script src="me.js"></script>
+    <script src="sidebar.js"></script>
+</body>
+
+</html>
