@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>抽獎系統</title>
+    <link rel="stylesheet" href="raffle.css">
+    <link rel="stylesheet" href="sidebar.css" />
+</head>
+
+<body>
+    <div id="sidebarContainer"></div>
+    <div class="prize-input-container">
+        <label for="prizeNameInput">獎品名稱：</label>
+        <input type="text" id="prizeNameInput" placeholder="請輸入獎品名稱">
+    </div>
+    <div class="container">
+        <div class="all-members">
+            <h3>全部人員</h3>
+            <ul id="prizeList"></ul>
+        </div>
+        <div class="selected-members">
+            <h3>抽獎人員</h3>
+            <ul id="selectedPrizeList"></ul>
+        </div>
+        <div class="wheel-container">
+            <div id="wheel" class="wheel"></div>
+            <div class="pointer">▼</div>
+        </div>
+    </div>
+    <button id="spinBtn">開始抽獎</button>
+    <div id="result">抽獎結果將顯示在這裡</div>
+    <a id="downloadLink" href="#" style="display: none;">下載錄影</a>
+    <script src="raffle.js"></script>
+    <script src="loadSidebar.js"></script>
+    <script src="sidebar.js"></script>
+</body>
+
+</html>
