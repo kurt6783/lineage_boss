@@ -1,0 +1,228 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #f0f0f0;
+}
+
+.prize-input-container {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.prize-input-container label {
+    font-size: 16px;
+    color: #333;
+}
+
+.prize-input-container input {
+    padding: 8px 12px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    width: 200px;
+}
+
+.prize-input-container input:focus {
+    outline: none;
+    border-color: #4caf50;
+    box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 40px;
+    /* 增加欄間距 */
+    margin: 20px 80px;
+    /* 增加左右外邊距 */
+}
+
+.all-members,
+.selected-members {
+    background: #fff;
+    padding: 15px 20px;
+    border-radius: 5px;
+    box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+    width: 600px;
+    height: 300px;
+}
+
+.all-members h3,
+.selected-members h3 {
+    margin: 0 0 10px;
+    font-size: 18px;
+    color: #333;
+}
+
+.all-members ul {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+    gap: 5px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+    height: calc(100% - 30px);
+    overflow-y: auto;
+}
+
+.selected-members ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    height: calc(100% - 30px);
+    overflow-y: auto;
+}
+
+.all-members li,
+.selected-members li {
+    padding: 8px;
+    text-align: center;
+    cursor: pointer;
+    border: 1px solid #eee;
+    border-radius: 3px;
+    font-size: 14px;
+    text-overflow: ellipsis;
+    /* 防止文字溢出 */
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.all-members li:hover,
+.selected-members li:hover {
+    background-color: #f0f0f0;
+}
+
+.wheel-container {
+    position: relative;
+    width: 300px;
+    height: 300px;
+    /* 移除左右內邊距，確保轉盤圓形 */
+}
+
+.wheel {
+    width: 300px;
+    /* 固定寬高，確保圓形 */
+    height: 300px;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    transition: transform 4s ease-out;
+}
+
+.section {
+    position: absolute;
+    width: 50%;
+    height: 50%;
+    text-align: center;
+    transform-origin: 100% 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    color: white;
+    text-shadow: 1px 1px 2px black;
+    text-overflow: ellipsis;
+    /* 防止轉盤文字溢出 */
+    white-space: nowrap;
+    overflow: hidden;
+    padding: 0 5px;
+}
+
+.pointer {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 24px;
+    color: black;
+    z-index: 10;
+}
+
+button {
+    margin-top: 10px;
+    padding: 12px 24px;
+    font-size: 16px;
+    cursor: pointer;
+    background-color: #4caf50;
+    color: white;
+    border: none;
+    border-radius: 5px;
+}
+
+button:hover {
+    background-color: #45a049;
+}
+
+button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+}
+
+#result {
+    margin-top: 10px;
+    font-size: 18px;
+    color: #333;
+    text-overflow: ellipsis;
+    /* 防止結果文字溢出 */
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 100%;
+}
+
+#downloadLink {
+    margin-top: 10px;
+    padding: 12px 24px;
+    background-color: #2196f3;
+    color: white;
+    text-decoration: none;
+    border-radius: 5px;
+    display: none;
+}
+
+#downloadLink:hover {
+    background-color: #1976d2;
+}
+
+/* 響應式設計：窄螢幕調整間距 */
+@media (max-width: 1400px) {
+    .container {
+        margin: 20px 40px;
+        /* 窄螢幕減小外邊距 */
+        gap: 20px;
+        /* 減小欄間距 */
+    }
+
+    .all-members,
+    .selected-members {
+        width: 500px;
+        /* 減小列表寬度 */
+    }
+
+    .wheel-container {
+        width: 250px;
+        height: 250px;
+    }
+
+    .wheel {
+        width: 250px;
+        height: 250px;
+    }
+
+    .section {
+        font-size: 12px;
+        /* 減小轉盤文字 */
+    }
+}
